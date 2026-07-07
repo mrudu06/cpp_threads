@@ -1,0 +1,64 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <thread>
+
+void process_file(std::string filename, double& out_total, double& out_average) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "COuld not open file " << filename << std::endl;
+        return; 
+    }
+
+    double num = 0.0;
+    double sum = 0.0;
+    int count = 0;
+
+    while (file >> num) {
+        sum += num;
+        count++;
+    }
+    file.close();
+    out_total = sum;
+    if (count > 0) {
+        out_average = sum / count;
+    } else {
+        out_average = 0.0;
+    }
+}
+int main() {
+    std::vector<std::string> files = {"file1.txt", "file2.txt", "file3.txt", "file4.txt"};
+    
+    double totals[4] = {0.0, 0.0, 0.0, 0.0};
+    double averages[4] = {0.0, 0.0, 0.0, 0.0};
+    
+    std::vector<std::thread> threads;
+
+    for (int i = 0; i < 4; ++i) {
+        threads.push_back(std::thread(process_file, files[i], std::ref(totals[i]), std::ref(averages[i])));
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        if (threads[i].joinable()) {
+            threads[i].join();
+        }
+    }
+
+    double global_total_sum = 0.0;
+    double global_average_sum = 0.0;
+
+    for (int i = 0; i < 4; ++i) {
+        std::cout << files[i] << "  Total: " << totals[i] << " | AVerge: " << averages[i] << std::endl;
+        
+        global_total_sum += totals[i];
+        global_average_sum += averages[i];
+    }
+
+    double overall_average = global_average_sum / 4.0;
+
+    std::cout << "Grand Total: " << global_total_sum << std::endl;
+    std::cout << "Grand Average " << overall_average << std::endl;
+
+    return 0;
+}
